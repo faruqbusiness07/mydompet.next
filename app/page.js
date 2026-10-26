@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -29,6 +28,11 @@ function formatDate(dateString) {
 }
 
 export default function Home() {
+  const [showBalanceDialog, setShowBalanceDialog] = useState(false);
+  const [balanceInput, setBalanceInput] = useState("0");
+  const [savingBalance, setSavingBalance] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const router = useRouter();
   const [openingBalance, setOpeningBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
@@ -36,28 +40,80 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-   async function loadDashboard() {
-  setLoading(true);
-  setError("");
+  async function handleSaveBalance() {
+    const amount = Number(balanceInput);
 
-  const { data, error: sessionError } =
-    await supabase.auth.getSession();
+    if (
+      balanceInput.trim() === "" ||
+      !Number.isFinite(amount) ||
+      amount < 0
+    ) {
+      alert("Masukkan saldo awal yang valid.");
+      return;
+    }
 
-  if (sessionError || !data.session) {
-    router.replace("/login");
-    return;
+    setSavingBalance(true);
+
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        alert("Sesi login tidak ditemukan. Silakan login kembali.");
+        router.replace("/login");
+        return;
+      }
+
+      const { error: saveError } = await supabase
+        .from("wallet_settings")
+        .upsert(
+          {
+            user_id: user.id,
+            opening_balance: amount,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+
+      if (saveError) {
+        alert("Gagal menyimpan saldo: " + saveError.message);
+        return;
+      }
+
+      setOpeningBalance(amount);
+      setShowBalanceDialog(false);
+      alert("Saldo awal berhasil disimpan!");
+    } catch (error) {
+      alert("Terjadi kesalahan: " + error.message);
+    } finally {
+      setSavingBalance(false);
+    }
   }
+
+  useEffect(() => {
+    async function loadDashboard() {
+      setLoading(true);
+      setError("");
+
+      const { data, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !data.session) {
+        router.replace("/login");
+        return;
+      }
 
       const month = getCurrentMonth();
       const today = new Date();
       const year = today.getFullYear();
       const monthNumber = String(today.getMonth() + 1).padStart(2, "0");
       const firstDay = `${year}-${monthNumber}-01`;
+
       const nextMonthDate = new Date(year, today.getMonth() + 1, 1);
-      const nextMonth = `${nextMonthDate.getFullYear()}-${String(
-        nextMonthDate.getMonth() + 1
-      ).padStart(2, "0")}-01`;
+      const nextMonthYear = nextMonthDate.getFullYear();
+      const nextMonthNumber = String(nextMonthDate.getMonth() + 1).padStart(2, "0");
+      const nextMonth = `${nextMonthYear}-${nextMonthNumber}-01`;
 
       const [walletResult, transactionResult, budgetResult] =
         await Promise.all([
@@ -103,7 +159,7 @@ export default function Home() {
     }
 
     loadDashboard();
-  }, []);
+  }, [router]);
 
   const income = transactions
     .filter((item) => item.type === "in")
@@ -137,6 +193,14 @@ export default function Home() {
         <div className="sidebar-note">
           <p>Kelola uangmu dengan lebih sadar.</p>
           <span>Personal Finance Tracker</span>
+
+          <button
+            className="primary-button"
+            onClick={() => setShowLogoutDialog(true)}
+            style={{ marginTop: 16, width: "100%" }}
+          >
+            Keluar
+          </button>
         </div>
       </aside>
 
@@ -171,10 +235,48 @@ export default function Home() {
         )}
 
         <section className="summary-grid">
+          {/* Card Saldo Aktif dengan Icon Pensil di Ujung Kanan */}
           <article className="card balance-card">
-            <p className="card-label">Total Saldo Aktif</p>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <p className="card-label" style={{ margin: 0 }}>Total Saldo Aktif</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setBalanceInput(String(openingBalance));
+                  setShowBalanceDialog(true);
+                }}
+                title="Edit Saldo Awal"
+                style={{
+                  background: "rgba(255, 255, 255, 0.3)",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: 32,
+                  height: 32,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#1e293b",
+                  transition: "background 0.2s",
+                }}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                </svg>
+              </button>
+            </div>
+
             <h2>{formatRupiah(balance)}</h2>
-            <p className="muted">
+            <p className="muted" style={{ margin: 0 }}>
               Saldo awal + pemasukan − pengeluaran
             </p>
           </article>
@@ -296,6 +398,163 @@ export default function Home() {
           MyDompet · Catat, pahami, kendalikan.
         </footer>
       </section>
+
+      {showLogoutDialog && (
+        <div
+          role="presentation"
+          onClick={() => {
+            if (!loggingOut) setShowLogoutDialog(false);
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1000,
+            background: "rgba(15, 23, 42, 0.55)",
+            display: "grid",
+            placeItems: "center",
+            padding: 20,
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="logout-title"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: 380,
+              background: "#fff",
+              borderRadius: 18,
+              padding: 24,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+            }}
+          >
+            <h2 id="logout-title" style={{ marginTop: 0 }}>
+              Konfirmasi Log Out
+            </h2>
+
+            <p style={{ color: "#6b7280", lineHeight: 1.6 }}>
+              Apakah kamu yakin ingin keluar dari akun MyDompet?
+            </p>
+
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                marginTop: 24,
+              }}
+            >
+              <button
+                type="button"
+                disabled={loggingOut}
+                onClick={() => setShowLogoutDialog(false)}
+                style={{
+                  flex: 1,
+                  padding: 12,
+                  border: 0,
+                  borderRadius: 10,
+                  background: "#10b981",
+                  color: "#fff",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Batal
+              </button>
+
+              <button
+                type="button"
+                disabled={loggingOut}
+                onClick={async () => {
+                  setLoggingOut(true);
+
+                  const { error } = await supabase.auth.signOut();
+
+                  if (error) {
+                    alert("Gagal keluar: " + error.message);
+                    setLoggingOut(false);
+                    return;
+                  }
+
+                  router.replace("/login");
+                  router.refresh();
+                }}
+                style={{
+                  flex: 1,
+                  padding: 12,
+                  border: 0,
+                  borderRadius: 10,
+                  background: "#ef4444",
+                  color: "#fff",
+                  fontWeight: 700,
+                  cursor: loggingOut ? "wait" : "pointer",
+                }}
+              >
+                {loggingOut ? "Memproses..." : "Log Out"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {showBalanceDialog && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            if (!savingBalance) {
+              setShowBalanceDialog(false);
+            }
+          }}
+        >
+          <section
+            className="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="balance-dialog-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="balance-dialog-title">Edit Saldo Awal</h2>
+
+            <p className="muted">
+              Masukkan saldo awal yang ingin kamu gunakan untuk menghitung
+              saldo aktif.
+            </p>
+
+            <label htmlFor="opening-balance-input">
+              Nominal saldo awal (Rp)
+            </label>
+
+            <input
+              id="opening-balance-input"
+              type="number"
+              min="0"
+              step="1"
+              value={balanceInput}
+              onChange={(event) => setBalanceInput(event.target.value)}
+              placeholder="Contoh: 1500000"
+              disabled={savingBalance}
+            />
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                onClick={() => setShowBalanceDialog(false)}
+                disabled={savingBalance}
+              >
+                Batal
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveBalance}
+                disabled={savingBalance}
+              >
+                {savingBalance ? "Menyimpan..." : "Simpan Saldo"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }
