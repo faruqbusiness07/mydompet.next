@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
 function formatRupiah(amount) {
@@ -28,6 +29,7 @@ function formatDate(dateString) {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [openingBalance, setOpeningBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
   const [budget, setBudget] = useState(0);
@@ -35,9 +37,17 @@ export default function Home() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function loadDashboard() {
-      setLoading(true);
-      setError("");
+   async function loadDashboard() {
+  setLoading(true);
+  setError("");
+
+  const { data, error: sessionError } =
+    await supabase.auth.getSession();
+
+  if (sessionError || !data.session) {
+    router.replace("/login");
+    return;
+  }
 
       const month = getCurrentMonth();
       const today = new Date();
