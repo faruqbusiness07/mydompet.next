@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import AddTransactionModal from "./components/AddTransactionModal";
 import EditBalanceModal from "./components/EditBalanceModal";
+import EditBudgetModal from "./components/EditBudgetModal"; // <-- Tambahan Modal Budget
 
 function formatRupiah(amount) {
   return new Intl.NumberFormat("id-ID", {
@@ -31,13 +32,13 @@ function formatDate(dateString) {
 
 export default function Home() {
   const [showBalanceDialog, setShowBalanceDialog] = useState(false);
+  const [showBudgetDialog, setShowBudgetDialog] = useState(false); // <-- State dialog budget
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [toast, setToast] = useState("");
   const router = useRouter();
   const [openingBalance, setOpeningBalance] = useState(0);
-  // Selisih pemasukan - pengeluaran dari SEMUA transaksi (bukan hanya bulan ini)
   const [netAllTime, setNetAllTime] = useState(0);
   const [transactions, setTransactions] = useState([]);
   const [budget, setBudget] = useState(0);
@@ -50,11 +51,9 @@ export default function Home() {
   }
 
   function handleTransactionSaved(row) {
-    // Saldo selalu ikut berubah, apa pun bulan transaksinya
     const sign = row.type === "in" ? 1 : -1;
     setNetAllTime((prev) => prev + sign * Number(row.amount));
 
-    // Daftar & kartu bulanan hanya untuk transaksi bulan berjalan
     const monthPrefix = getCurrentMonth().slice(0, 7);
 
     if (row.transaction_date.startsWith(monthPrefix)) {
@@ -63,7 +62,7 @@ export default function Home() {
           b.transaction_date.localeCompare(a.transaction_date)
         )
       );
-      showToast("Pengeluaran berhasil dicatat.");
+      showToast("Transaksi berhasil dicatat.");
     } else {
       showToast("Tersimpan, tapi bukan transaksi bulan ini.");
     }
@@ -72,6 +71,11 @@ export default function Home() {
   function handleBalanceSaved(newOpening) {
     setOpeningBalance(newOpening);
     showToast("Saldo aktif berhasil diperbarui.");
+  }
+
+  function handleBudgetSaved(newBudget) {
+    setBudget(newBudget);
+    showToast("Anggaran bulanan berhasil diperbarui.");
   }
 
   useEffect(() => {
@@ -119,10 +123,10 @@ export default function Home() {
           supabase
             .from("monthly_budgets")
             .select("budget_amount")
+            .eq("user_id", userId) // <-- Ditambahkan filter user_id agar aman multi-user
             .eq("month", month)
             .maybeSingle(),
 
-          // Total bersih semua transaksi (dihitung di database)
           supabase.rpc("get_net_transactions"),
         ]);
 
@@ -222,7 +226,7 @@ export default function Home() {
         )}
 
         <section className="summary-grid">
-          {/* Card Saldo Aktif dengan Icon Pensil di Ujung Kanan */}
+          {/* Card Saldo Aktif */}
           <article className="card balance-card">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
               <p className="card-label" style={{ margin: 0 }}>Total Saldo Aktif</p>
@@ -245,16 +249,7 @@ export default function Home() {
                   transition: "background 0.2s",
                 }}
               >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
                 </svg>
               </button>
@@ -280,13 +275,39 @@ export default function Home() {
         </section>
 
         <section className="main-grid">
+          {/* Card Anggaran Bulanan dengan Tombol Edit */}
           <article className="card budget-card" id="cashflow">
             <div className="section-heading">
               <div>
                 <p className="card-label">MONTHLY BUDGET</p>
                 <h2>Anggaran Bulanan</h2>
               </div>
-              <span className="budget-badge">Bulan ini</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span className="budget-badge">Bulan ini</span>
+                <button
+                  type="button"
+                  onClick={() => setShowBudgetDialog(true)}
+                  title="Edit Anggaran Bulanan"
+                  aria-label="Edit anggaran bulanan"
+                  style={{
+                    background: "#f1f5f9",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: 30,
+                    height: 30,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#475569",
+                    transition: "background 0.2s",
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <h3>
@@ -310,17 +331,23 @@ export default function Home() {
               </strong>
             </div>
 
-            <p className="muted budget-note">
+            {/* Tambahan baris persentase di bawah */}
+            <p className="muted" style={{ marginTop: 6, fontSize: "0.85rem", fontWeight: 500, color: "#64748b" }}>
+              {budget > 0 ? `Persentase anggaran terpakai: ${percentage}%` : ""}
+            </p>
+
+            <p className="muted budget-note" style={{ marginTop: 4 }}>
               {loading
                 ? "Memuat data dari Supabase..."
                 : budget === 0
-                  ? "Belum ada anggaran untuk bulan ini."
+                  ? "Belum ada anggaran untuk bulan ini. Klik ikon pensil untuk mengatur."
                   : remaining < 0
                     ? "Pengeluaran sudah melebihi anggaran."
                     : "Anggaran berdasarkan data bulan ini."}
             </p>
           </article>
 
+          {/* Card Transaksi Terbaru */}
           <article className="card transactions-card" id="history">
             <div className="section-heading">
               <div>
@@ -384,6 +411,7 @@ export default function Home() {
         </footer>
       </section>
 
+      {/* Modal Logout */}
       {showLogoutDialog && (
         <div
           role="presentation"
@@ -488,6 +516,14 @@ export default function Home() {
         netAllTime={netAllTime}
         onClose={() => setShowBalanceDialog(false)}
         onSaved={handleBalanceSaved}
+      />
+
+      <EditBudgetModal
+        open={showBudgetDialog}
+        currentBudget={budget}
+        month={getCurrentMonth()}
+        onClose={() => setShowBudgetDialog(false)}
+        onSaved={handleBudgetSaved}
       />
 
       <AddTransactionModal
