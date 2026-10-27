@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import AddTransactionModal from "./components/AddTransactionModal";
-
+import EditBalanceModal from "./components/EditBalanceModal";
 
 function formatRupiah(amount) {
   return new Intl.NumberFormat("id-ID", {
@@ -31,88 +31,48 @@ function formatDate(dateString) {
 
 export default function Home() {
   const [showBalanceDialog, setShowBalanceDialog] = useState(false);
-  const [balanceInput, setBalanceInput] = useState("0");
-  const [savingBalance, setSavingBalance] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [toast, setToast] = useState("");
   const router = useRouter();
   const [openingBalance, setOpeningBalance] = useState(0);
+  // Selisih pemasukan - pengeluaran dari SEMUA transaksi (bukan hanya bulan ini)
+  const [netAllTime, setNetAllTime] = useState(0);
   const [transactions, setTransactions] = useState([]);
   const [budget, setBudget] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [toast, setToast] = useState("");
 
-  async function handleSaveBalance() {
-    const amount = Number(balanceInput);
-
-    if (
-      balanceInput.trim() === "" ||
-      !Number.isFinite(amount) ||
-      amount < 0
-    ) {
-      alert("Masukkan saldo awal yang valid.");
-      return;
-    }
-
-    setSavingBalance(true);
-
-    try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        alert("Sesi login tidak ditemukan. Silakan login kembali.");
-        router.replace("/login");
-        return;
-      }
-
-      const { error: saveError } = await supabase
-        .from("wallet_settings")
-        .upsert(
-          {
-            user_id: user.id,
-            opening_balance: amount,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id" }
-        );
-
-      if (saveError) {
-        alert("Gagal menyimpan saldo: " + saveError.message);
-        return;
-      }
-
-      setOpeningBalance(amount);
-      setShowBalanceDialog(false);
-      alert("Saldo awal berhasil disimpan!");
-    } catch (error) {
-      alert("Terjadi kesalahan: " + error.message);
-    } finally {
-      setSavingBalance(false);
-    }
-  }
-function handleTransactionSaved(row) {
-  // Tampilkan di daftar hanya jika tanggalnya masuk bulan berjalan
-  const monthPrefix = getCurrentMonth().slice(0, 7);
-
-  if (row.transaction_date.startsWith(monthPrefix)) {
-    setTransactions((prev) =>
-      [row, ...prev].sort((a, b) =>
-        b.transaction_date.localeCompare(a.transaction_date)
-      )
-    );
-    setToast("Pengeluaran berhasil dicatat.");
-  } else {
-    setToast("Tersimpan, tapi bukan transaksi bulan ini.");
+  function showToast(message) {
+    setToast(message);
+    setTimeout(() => setToast(""), 2500);
   }
 
-  setTimeout(() => setToast(""), 2500);
-}
+  function handleTransactionSaved(row) {
+    // Saldo selalu ikut berubah, apa pun bulan transaksinya
+    const sign = row.type === "in" ? 1 : -1;
+    setNetAllTime((prev) => prev + sign * Number(row.amount));
 
+    // Daftar & kartu bulanan hanya untuk transaksi bulan berjalan
+    const monthPrefix = getCurrentMonth().slice(0, 7);
+
+    if (row.transaction_date.startsWith(monthPrefix)) {
+      setTransactions((prev) =>
+        [row, ...prev].sort((a, b) =>
+          b.transaction_date.localeCompare(a.transaction_date)
+        )
+      );
+      showToast("Pengeluaran berhasil dicatat.");
+    } else {
+      showToast("Tersimpan, tapi bukan transaksi bulan ini.");
+    }
+  }
+
+  function handleBalanceSaved(newOpening) {
+    setOpeningBalance(newOpening);
+    showToast("Saldo aktif berhasil diperbarui.");
+  }
 
   useEffect(() => {
     async function loadDashboard() {
@@ -126,6 +86,7 @@ function handleTransactionSaved(row) {
         return;
       }
 
+      const userId = data.session.user.id;
       const month = getCurrentMonth();
       const today = new Date();
       const year = today.getFullYear();
@@ -137,11 +98,12 @@ function handleTransactionSaved(row) {
       const nextMonthNumber = String(nextMonthDate.getMonth() + 1).padStart(2, "0");
       const nextMonth = `${nextMonthYear}-${nextMonthNumber}-01`;
 
-      const [walletResult, transactionResult, budgetResult] =
+      const [walletResult, transactionResult, budgetResult, netResult] =
         await Promise.all([
           supabase
             .from("wallet_settings")
             .select("opening_balance")
+            .eq("user_id", userId)
             .maybeSingle(),
 
           supabase
@@ -159,12 +121,16 @@ function handleTransactionSaved(row) {
             .select("budget_amount")
             .eq("month", month)
             .maybeSingle(),
+
+          // Total bersih semua transaksi (dihitung di database)
+          supabase.rpc("get_net_transactions"),
         ]);
 
       const firstError =
         walletResult.error ||
         transactionResult.error ||
-        budgetResult.error;
+        budgetResult.error ||
+        netResult.error;
 
       if (firstError) {
         setError(firstError.message);
@@ -175,6 +141,7 @@ function handleTransactionSaved(row) {
       setOpeningBalance(
         Number(walletResult.data?.opening_balance) || 0
       );
+      setNetAllTime(Number(netResult.data) || 0);
       setTransactions(transactionResult.data || []);
       setBudget(Number(budgetResult.data?.budget_amount) || 0);
       setLoading(false);
@@ -191,7 +158,7 @@ function handleTransactionSaved(row) {
     .filter((item) => item.type === "out")
     .reduce((total, item) => total + Number(item.amount), 0);
 
-  const balance = openingBalance + income - expense;
+  const balance = openingBalance + netAllTime;
   const remaining = budget - expense;
   const percentage =
     budget > 0 ? Math.round((expense / budget) * 100) : 0;
@@ -237,11 +204,11 @@ function handleTransactionSaved(row) {
           </div>
 
           <button
-  className="primary-button"
-  onClick={() => setShowAddDialog(true)}
->
-  + Tambah Transaksi
-</button>
+            className="primary-button"
+            onClick={() => setShowAddDialog(true)}
+          >
+            + Tambah Transaksi
+          </button>
         </header>
 
         {error && (
@@ -261,11 +228,9 @@ function handleTransactionSaved(row) {
               <p className="card-label" style={{ margin: 0 }}>Total Saldo Aktif</p>
               <button
                 type="button"
-                onClick={() => {
-                  setBalanceInput(String(openingBalance));
-                  setShowBalanceDialog(true);
-                }}
-                title="Edit Saldo Awal"
+                onClick={() => setShowBalanceDialog(true)}
+                title="Edit Saldo Aktif"
+                aria-label="Edit saldo aktif"
                 style={{
                   background: "rgba(255, 255, 255, 0.3)",
                   border: "none",
@@ -297,7 +262,7 @@ function handleTransactionSaved(row) {
 
             <h2>{formatRupiah(balance)}</h2>
             <p className="muted" style={{ margin: 0 }}>
-              Saldo awal + pemasukan − pengeluaran
+              Berubah otomatis setiap ada transaksi
             </p>
           </article>
 
@@ -517,75 +482,25 @@ function handleTransactionSaved(row) {
         </div>
       )}
 
-      {showBalanceDialog && (
-        <div
-          className="modal-overlay"
-          onClick={() => {
-            if (!savingBalance) {
-              setShowBalanceDialog(false);
-            }
-          }}
-        >
-          <section
-            className="modal-card"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="balance-dialog-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h2 id="balance-dialog-title">Edit Saldo Awal</h2>
+      <EditBalanceModal
+        open={showBalanceDialog}
+        balance={balance}
+        netAllTime={netAllTime}
+        onClose={() => setShowBalanceDialog(false)}
+        onSaved={handleBalanceSaved}
+      />
 
-            <p className="muted">
-              Masukkan saldo awal yang ingin kamu gunakan untuk menghitung
-              saldo aktif.
-            </p>
+      <AddTransactionModal
+        open={showAddDialog}
+        onClose={() => setShowAddDialog(false)}
+        onSaved={handleTransactionSaved}
+      />
 
-            <label htmlFor="opening-balance-input">
-              Nominal saldo awal (Rp)
-            </label>
-
-            <input
-              id="opening-balance-input"
-              type="number"
-              min="0"
-              step="1"
-              value={balanceInput}
-              onChange={(event) => setBalanceInput(event.target.value)}
-              placeholder="Contoh: 1500000"
-              disabled={savingBalance}
-            />
-
-            <div className="modal-actions">
-              <button
-                type="button"
-                onClick={() => setShowBalanceDialog(false)}
-                disabled={savingBalance}
-              >
-                Batal
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSaveBalance}
-                disabled={savingBalance}
-              >
-                {savingBalance ? "Menyimpan..." : "Simpan Saldo"}
-              </button>
-            </div>
-          </section>
+      {toast && (
+        <div className="fp-toast" role="status">
+          {toast}
         </div>
       )}
-      <AddTransactionModal
-  open={showAddDialog}
-  onClose={() => setShowAddDialog(false)}
-  onSaved={handleTransactionSaved}
-/>
-
-{toast && (
-  <div className="fp-toast" role="status">
-    {toast}
-  </div>
-)}
     </main>
   );
 }
