@@ -1,0 +1,237 @@
+.fp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.fp-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 28px;
+  padding: 22px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+  color: #0f172a;
+}
+
+.fp-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #dc2626;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.18);
+}
+.fp-close-btn svg {
+  width: 16px;
+  height: 16px;
+}
+.fp-close-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.fp-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-right: 44px;
+}
+.fp-head h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.fp-ico {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #dcfce7;
+  color: #16a34a;
+  display: grid;
+  place-items: center;
+}
+.fp-ico svg {
+  width: 20px;
+  height: 20px;
+}
+
+.fp-field {
+  display: block;
+  margin: 0 0 16px;
+}
+.fp-fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.fp-label {
+  display: block;
+  margin-bottom: 8px;
+  padding: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.fp-chip {
+  display: inline-block;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.fp-options {
+  display: grid;
+  gap: 8px;
+}
+.fp-radio {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.fp-radio input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.fp-radio .dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.fp-radio .txt {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+.fp-radio:has(input:checked) {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+.fp-radio:has(input:checked) .dot {
+  border-color: #10b981;
+}
+.fp-radio:has(input:checked) .dot::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10b981;
+}
+.fp-radio:has(input:focus-visible) {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
+.fp-input {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.92rem;
+  color: #0f172a;
+}
+.fp-input::placeholder {
+  color: #9ca3af;
+}
+.fp-input:focus {
+  outline: 2px solid #10b981;
+  outline-offset: 1px;
+  border-color: #10b981;
+}
+.fp-input:disabled {
+  opacity: 0.7;
+}
+
+.fp-err {
+  display: block;
+  margin-top: 6px;
+  color: #dc2626;
+  font-size: 0.78rem;
+}
+.fp-submit-err {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.82rem;
+}
+
+.fp-hint {
+  margin: 0 0 18px;
+  color: #6b7280;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.fp-btn {
+  width: 100%;
+  padding: 15px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22c55e, #10b981);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(16, 185, 129, 0.3);
+}
+.fp-btn:disabled {
+  cursor: wait;
+  opacity: 0.75;
+}
+
+.fp-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 1100;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 480px) {
+  .fp-card {
+    padding: 18px;
+    border-radius: 24px;
+  }
+}

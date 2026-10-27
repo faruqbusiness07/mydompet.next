@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import AddTransactionModal from "./components/AddTransactionModal";
+
 
 function formatRupiah(amount) {
   return new Intl.NumberFormat("id-ID", {
@@ -39,6 +41,8 @@ export default function Home() {
   const [budget, setBudget] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [toast, setToast] = useState("");
 
   async function handleSaveBalance() {
     const amount = Number(balanceInput);
@@ -91,6 +95,24 @@ export default function Home() {
       setSavingBalance(false);
     }
   }
+function handleTransactionSaved(row) {
+  // Tampilkan di daftar hanya jika tanggalnya masuk bulan berjalan
+  const monthPrefix = getCurrentMonth().slice(0, 7);
+
+  if (row.transaction_date.startsWith(monthPrefix)) {
+    setTransactions((prev) =>
+      [row, ...prev].sort((a, b) =>
+        b.transaction_date.localeCompare(a.transaction_date)
+      )
+    );
+    setToast("Pengeluaran berhasil dicatat.");
+  } else {
+    setToast("Tersimpan, tapi bukan transaksi bulan ini.");
+  }
+
+  setTimeout(() => setToast(""), 2500);
+}
+
 
   useEffect(() => {
     async function loadDashboard() {
@@ -215,13 +237,11 @@ export default function Home() {
           </div>
 
           <button
-            className="primary-button"
-            onClick={() =>
-              alert("Form transaksi akan kita buat berikutnya.")
-            }
-          >
-            + Tambah Transaksi
-          </button>
+  className="primary-button"
+  onClick={() => setShowAddDialog(true)}
+>
+  + Tambah Transaksi
+</button>
         </header>
 
         {error && (
@@ -555,6 +575,17 @@ export default function Home() {
           </section>
         </div>
       )}
+      <AddTransactionModal
+  open={showAddDialog}
+  onClose={() => setShowAddDialog(false)}
+  onSaved={handleTransactionSaved}
+/>
+
+{toast && (
+  <div className="fp-toast" role="status">
+    {toast}
+  </div>
+)}
     </main>
   );
 }
