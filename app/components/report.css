@@ -1,0 +1,155 @@
+.rp-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.rp-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.rp-stack {
+  display: grid;
+  gap: 16px;
+}
+
+@media (max-width: 960px) {
+  .rp-grid-3,
+  .rp-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rp-big {
+  margin: 6px 0 4px;
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.rp-sub {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+/* Progress bar */
+.rp-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+.rp-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease, background 0.2s;
+}
+.rp-bar-lg {
+  height: 14px;
+}
+
+/* Badge status */
+.rp-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Baris kategori */
+.rp-cat-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.rp-cat-ico {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #f0fdf4;
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+.rp-cat-name {
+  flex: 1;
+  min-width: 0;
+}
+.rp-cat-name strong {
+  display: block;
+  font-size: 1rem;
+}
+.rp-cat-name span {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+.rp-cat-total {
+  text-align: right;
+}
+.rp-cat-total strong {
+  display: block;
+  font-size: 1rem;
+  color: #dc2626;
+}
+.rp-cat-total span {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* Daftar transaksi di dalam kategori */
+.rp-items {
+  margin-top: 14px;
+  border-top: 1px solid #eef2f7;
+}
+.rp-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 2px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.rp-item:last-child {
+  border-bottom: 0;
+}
+.rp-item strong {
+  display: block;
+  font-size: 0.92rem;
+}
+.rp-item span {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+.rp-item .rp-amount {
+  font-weight: 700;
+  color: #dc2626;
+  white-space: nowrap;
+}
+
+.rp-empty {
+  padding: 28px 8px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.rp-row-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.rp-link {
+  color: #059669;
+  font-weight: 700;
+  text-decoration: underline;
+}

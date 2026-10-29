@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import Sidebar from "./components/Sidebar";
 import AddTransactionModal from "./components/AddTransactionModal";
 import EditBalanceModal from "./components/EditBalanceModal";
-import EditBudgetModal from "./components/EditBudgetModal"; // <-- Tambahan Modal Budget
+import EditBudgetModal from "./components/EditBudgetModal";
 
 function formatRupiah(amount) {
   return new Intl.NumberFormat("id-ID", {
@@ -32,9 +34,7 @@ function formatDate(dateString) {
 
 export default function Home() {
   const [showBalanceDialog, setShowBalanceDialog] = useState(false);
-  const [showBudgetDialog, setShowBudgetDialog] = useState(false); // <-- State dialog budget
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
+  const [showBudgetDialog, setShowBudgetDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [toast, setToast] = useState("");
   const router = useRouter();
@@ -123,7 +123,7 @@ export default function Home() {
           supabase
             .from("monthly_budgets")
             .select("budget_amount")
-            .eq("user_id", userId) // <-- Ditambahkan filter user_id agar aman multi-user
+            .eq("user_id", userId)
             .eq("month", month)
             .maybeSingle(),
 
@@ -170,32 +170,7 @@ export default function Home() {
 
   return (
     <main className="dashboard">
-      <aside className="sidebar">
-        <h2 className="brand">
-          My<span>Dompet</span>
-        </h2>
-
-        <nav className="navigation">
-          <a className="nav-active" href="#dashboard">
-            ▦ Dashboard
-          </a>
-          <a href="#history">◷ History</a>
-          <a href="#cashflow">↗ Cash Flow</a>
-        </nav>
-
-        <div className="sidebar-note">
-          <p>Kelola uangmu dengan lebih sadar.</p>
-          <span>Personal Finance Tracker</span>
-
-          <button
-            className="primary-button"
-            onClick={() => setShowLogoutDialog(true)}
-            style={{ marginTop: 16, width: "100%" }}
-          >
-            Keluar
-          </button>
-        </div>
-      </aside>
+      <Sidebar />
 
       <section className="content" id="dashboard">
         <header className="page-header">
@@ -276,7 +251,7 @@ export default function Home() {
 
         <section className="main-grid">
           {/* Card Anggaran Bulanan dengan Tombol Edit */}
-          <article className="card budget-card" id="cashflow">
+          <article className="card budget-card">
             <div className="section-heading">
               <div>
                 <p className="card-label">MONTHLY BUDGET</p>
@@ -331,11 +306,6 @@ export default function Home() {
               </strong>
             </div>
 
-            {/* Tambahan baris persentase di bawah */}
-            <p className="muted" style={{ marginTop: 6, fontSize: "0.85rem", fontWeight: 500, color: "#64748b" }}>
-              {budget > 0 ? `Persentase anggaran terpakai: ${percentage}%` : ""}
-            </p>
-
             <p className="muted budget-note" style={{ marginTop: 4 }}>
               {loading
                 ? "Memuat data dari Supabase..."
@@ -348,15 +318,15 @@ export default function Home() {
           </article>
 
           {/* Card Transaksi Terbaru */}
-          <article className="card transactions-card" id="history">
+          <article className="card transactions-card">
             <div className="section-heading">
               <div>
                 <p className="card-label">RECENT ACTIVITY</p>
                 <h2>Transaksi Terbaru</h2>
               </div>
-              <a className="text-link" href="#history">
+              <Link className="text-link" href="/history">
                 Lihat semua
-              </a>
+              </Link>
             </div>
 
             <div className="transaction-list">
@@ -410,105 +380,6 @@ export default function Home() {
           MyDompet · Catat, pahami, kendalikan.
         </footer>
       </section>
-
-      {/* Modal Logout */}
-      {showLogoutDialog && (
-        <div
-          role="presentation"
-          onClick={() => {
-            if (!loggingOut) setShowLogoutDialog(false);
-          }}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 1000,
-            background: "rgba(15, 23, 42, 0.55)",
-            display: "grid",
-            placeItems: "center",
-            padding: 20,
-          }}
-        >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="logout-title"
-            onClick={(event) => event.stopPropagation()}
-            style={{
-              width: "100%",
-              maxWidth: 380,
-              background: "#fff",
-              borderRadius: 18,
-              padding: 24,
-              boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
-            }}
-          >
-            <h2 id="logout-title" style={{ marginTop: 0 }}>
-              Konfirmasi Log Out
-            </h2>
-
-            <p style={{ color: "#6b7280", lineHeight: 1.6 }}>
-              Apakah kamu yakin ingin keluar dari akun MyDompet?
-            </p>
-
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                marginTop: 24,
-              }}
-            >
-              <button
-                type="button"
-                disabled={loggingOut}
-                onClick={() => setShowLogoutDialog(false)}
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  border: 0,
-                  borderRadius: 10,
-                  background: "#10b981",
-                  color: "#fff",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                Batal
-              </button>
-
-              <button
-                type="button"
-                disabled={loggingOut}
-                onClick={async () => {
-                  setLoggingOut(true);
-
-                  const { error } = await supabase.auth.signOut();
-
-                  if (error) {
-                    alert("Gagal keluar: " + error.message);
-                    setLoggingOut(false);
-                    return;
-                  }
-
-                  router.replace("/login");
-                  router.refresh();
-                }}
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  border: 0,
-                  borderRadius: 10,
-                  background: "#ef4444",
-                  color: "#fff",
-                  fontWeight: 700,
-                  cursor: loggingOut ? "wait" : "pointer",
-                }}
-              >
-                {loggingOut ? "Memproses..." : "Log Out"}
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
 
       <EditBalanceModal
         open={showBalanceDialog}
