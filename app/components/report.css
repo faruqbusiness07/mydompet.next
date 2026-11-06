@@ -153,3 +153,81 @@
   font-weight: 700;
   text-decoration: underline;
 }
+
+/* ---------- Kartu pilih bulan (History) ---------- */
+.rp-months {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 960px) {
+  .rp-months {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.rp-month {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  color: #0f172a;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.rp-month:hover {
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+.rp-month:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+.rp-month-active {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+.rp-month-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+}
+.rp-month-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 700;
+}
+.rp-month-total {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+.rp-badge-sm {
+  padding: 3px 10px;
+  font-size: 0.7rem;
+}
+.rp-month-skeleton {
+  min-height: 108px;
+  background: #eef2f7;
+  cursor: default;
+  animation: rp-pulse 1.2s ease-in-out infinite;
+}
+@keyframes rp-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
