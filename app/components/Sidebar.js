@@ -6,9 +6,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
 const NAV_ITEMS = [
-  { href: "/", label: "▦ Dashboard" },
-  { href: "/history", label: "◷ History" },
-  { href: "/cashflow", label: "↗ Cash Flow" },
+  { href: "/", label: " Dashboard" },
+  { href: "/history", label: " History" },
+  { href: "/cashflow", label: " Cash Flow" },
+  {href : "/tabungan", label  : "Tabungan" },
 ];
 
 export default function Sidebar() {
