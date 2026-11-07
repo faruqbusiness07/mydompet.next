@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import Sidebar from "../components/Sidebar";
-import AddGoalModal from "../components/AddGoalModal";
+import AddSavingGoalModal from "../components/AddSavingGoalModal";
 import AddSavingsTransactionModal from "../components/AddSavingsTransactionModal";
 
 function formatRupiah(amount) {
