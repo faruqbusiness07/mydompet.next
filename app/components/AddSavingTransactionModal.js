@@ -135,4 +135,4 @@ export default function AddSavingsTransactionModal({ open, goals, onClose, onSav
       </form>
     </div>
   );
-}
+} 
