@@ -202,7 +202,7 @@ export default function TabunganPage() {
       <AddSavingGoalModal open={showGoalModal} onClose={() => setShowGoalModal(false)} onSaved={handleGoalSaved} />
 
       {/* Modal Input Setoran Tabungan */}
-      <AddSavingTransactionModal open={showTxModal} goals={goals} onClose={() => setShowTxModal(false)} onSaved={handleTxSaved} />
+      <AddSavingsTransactionModal open={showTxModal} goals={goals} onClose={() => setShowTxModal(false)} onSaved={handleTxSaved} />
 
       {toast && <div className="fp-toast" role="status">{toast}</div>}
     </main>
