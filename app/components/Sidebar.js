@@ -6,10 +6,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
 const NAV_ITEMS = [
-  { href: "/", label: "▦ Dashboard" },
-  { href: "/history", label: "◷ History" },
-  { href: "/cashflow", label: "↗ Cash Flow" },
-  { href: "/tabungan", label: "💰 Tabungan" }, // <-- Menu Tabungan ditambahkan di sini
+  { href: "/", label: " Dashboard" },
+  { href: "/history", label: " History" },
+  { href: "/cashflow", label: " Cash Flow" },
+  { href: "/Tabungan", label: " Tabungan" }, // <-- Menu Tabungan ditambahkan di sini
 ];
 
 export default function Sidebar() {
