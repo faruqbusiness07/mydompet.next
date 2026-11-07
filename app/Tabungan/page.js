@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import Sidebar from "../components/Sidebar";
 import AddSavingGoalModal from "../components/AddSavingGoalModal";
-import AddSavingsTransactionModal from "../components/AddSavingsTransactionModal";
+import AddSavingsTransactionModal from "../components/AddSavingTransactionModal";
 
 function formatRupiah(amount) {
   return new Intl.NumberFormat("id-ID", {
@@ -199,10 +199,10 @@ export default function TabunganPage() {
       </section>
 
       {/* Modal Tambah Target Kategori */}
-      <AddGoalModal open={showGoalModal} onClose={() => setShowGoalModal(false)} onSaved={handleGoalSaved} />
+      <AddSavingGoalModal open={showGoalModal} onClose={() => setShowGoalModal(false)} onSaved={handleGoalSaved} />
 
       {/* Modal Input Setoran Tabungan */}
-      <AddSavingsTransactionModal open={showTxModal} goals={goals} onClose={() => setShowTxModal(false)} onSaved={handleTxSaved} />
+      <AddSavingTransactionModal open={showTxModal} goals={goals} onClose={() => setShowTxModal(false)} onSaved={handleTxSaved} />
 
       {toast && <div className="fp-toast" role="status">{toast}</div>}
     </main>
